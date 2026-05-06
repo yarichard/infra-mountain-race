@@ -45,7 +45,7 @@ data "aws_iam_policy_document" "terraform_state" {
       "ecr:CreateRepository"
     ]
     resources = [
-      "arn:aws:ecr:${var.region}:${var.aws_account_id}:repository/infra-mountain-race"
+      "arn:aws:ecr:${var.region}:${var.aws_account_id}:repository/mountain-race"
     ]
   }
 

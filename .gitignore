@@ -3,3 +3,4 @@
 **/.terraform/*
 .infracost/
 terraform.tfstate.backup
+.tfvars
