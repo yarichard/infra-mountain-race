@@ -22,23 +22,51 @@ Terraform module managing AWS infrastructure for the [mountain-race](../../mount
 
 ## Secrets
 
-Stored as a JSON object in `mountain-race/prod`. Currently active keys:
+Stored as a single JSON object in AWS Secrets Manager at `mountain-race/prod`. Terraform owns the secret *resource* (ARN, policy) but **not the value** — the value is managed out-of-band so it never touches the Terraform state file.
 
-| Key | Source |
+Active keys injected as env vars into the running container:
+
+| Key | Description |
 |---|---|
-| `OPENAI_API_KEY` | `var.openai_api_key` |
-| `LLM_PROVIDER` | `var.llm_provider` (default: `openai`) |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `LLM_PROVIDER` | Active LLM provider (`openai` or `gemini`) |
+
+### Updating secrets
+
+Use the AWS CLI from a machine with appropriate IAM permissions. Always provide the full JSON object — partial updates will overwrite the other keys.
+
+**Read current value:**
+```sh
+aws secretsmanager get-secret-value \
+  --secret-id mountain-race/prod \
+  --region eu-west-3 \
+  --query SecretString \
+  --output text
+```
+
+**Update (replace with full object):**
+```sh
+aws secretsmanager put-secret-value \
+  --secret-id mountain-race/prod \
+  --region eu-west-3 \
+  --secret-string '{"OPENAI_API_KEY":"sk-...","LLM_PROVIDER":"openai"}'
+```
+
+Changes take effect on the next AppRunner deployment — no `terraform apply` needed.
 
 ## CI/CD
 
-GitHub Actions authenticates via OIDC (no long-lived credentials). The trust policy on `GitHubActionECRPushRoleForMountainRace` allows all branches, tags, and PRs from `yarichard/mountain-race`. The OIDC provider ARN is read from the bootstrap remote state.
+GitHub Actions authenticates via OIDC (no long-lived credentials):
+
+- `yarichard/infra-mountain-race` assumes `GitHubActionTerraformRole` (bootstrap) to run `terraform plan/apply`
+- `yarichard/mountain-race` assumes `GitHubActionECRPushRoleForMountainRace` to push Docker images to ECR
 
 ## Usage
 
 ```sh
 terraform init
-terraform plan -var="openai_api_key=sk-..."
-terraform apply -var="openai_api_key=sk-..."
+terraform plan
+terraform apply
 ```
 
-Sensitive variables (`openai_api_key`) must be supplied at plan/apply time or via a `.tfvars` file (not committed).
+No secret variables required — secret values are managed directly in Secrets Manager (see above).

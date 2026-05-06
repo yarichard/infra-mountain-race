@@ -2,36 +2,49 @@
 
 Manages AWS resources for the mountain-race app. The application code lives at `../../mountain-race`; see its CLAUDE.md for app-level details.
 
+### Terraform architecture
+
+Two projects, both backed by the same S3 bucket (`terraform-state-bucket-yrichard`, eu-west-3):
+
+| Project | Path | State key | Purpose |
+|---|---|---|---|
+| `terraform-bootstrap` | `../terraform-bootstrap` | `bootstrap/terraform.tfstate` | Shared foundations: S3 state bucket, GitHub OIDC provider, `GitHubActionTerraformRole` (used by all infra CI pipelines) |
+| `infra-mountain-race` | `.` (this project) | `mountain-race/terraform.tfstate` | App-specific resources: ECR, Secrets Manager, IAM roles for ECR push and AppRunner |
+
+This project reads bootstrap outputs via `terraform_remote_state` to get `github_oidc_provider_arn` and `github_actions_terraform_role_name`.
+
+**To add a new infra repo's CI pipeline**, add its GitHub repo name to `github_repositories_allowed_for_terraform` in `terraform-bootstrap/variables.tf` and re-apply bootstrap.
+
 ### Current state
 
-AppRunner service is active in `main.tf` with Secrets Manager injection and an instance role.
+The AppRunner service definition is commented out in `main.tf`. Active resources are ECR, Secrets Manager, and the associated IAM roles.
 
 ### AWS resources managed
 
 | Resource | Name | Notes |
 |---|---|---|
 | ECR repository | `mountain-race` | scan on push, AES256 encryption, force_delete=true |
-| AppRunner service | `mountain-race` | port 3000, 256 CPU / 512 MB |
-| Secrets Manager secret | `mountain-race/prod` | JSON object: METEOFRANCE_USER/PASS, OPENAI_API_KEY, GEMINI_API_KEY, LLM_PROVIDER |
+| Secrets Manager secret | `mountain-race/prod` | JSON object: OPENAI_API_KEY, LLM_PROVIDER |
 | IAM role | `MountainRaceAppRunnerECRRole` | lets AppRunner pull from ECR (ECRReadOnly) |
 | IAM role | `AppRunnerInstanceRoleMountainRace` | instance role for the running container; allows `secretsmanager:GetSecretValue` on the prod secret |
-| IAM role | `GitHubActionECRPushRoleForMountainRace` | lets GitHub Actions push/pull images via OIDC |
+| IAM role | `GitHubActionECRPushRoleForMountainRace` | lets `yarichard/mountain-race` push/pull images via OIDC |
 | IAM policy | `GitHubECRPushPolicyForMountainRace` | full ECR push/pull permissions, attached to the role above |
-| IAM policy | `GithubMountainECRTerraformStatePolicy` | least-privilege `terraform apply` permissions for this module; attached to the bootstrap GitHub Actions Terraform role |
+| IAM policy | `GithubMountainECRTerraformStatePolicy` | least-privilege `terraform apply` permissions for this module; attached to `GitHubActionTerraformRole` (bootstrap) |
 
 Region: `eu-west-3` (Paris). Account: `704496393752`.
 
 ### CI/CD wiring
 
-GitHub Actions authenticates via OIDC (no long-lived credentials). The trust policy on `GitHubActionECRPushRoleForMountainRace` allows all branches, tags, and pull requests from `yarichard/mountain-race`. The OIDC provider ARN is read from the bootstrap remote state.
+Two GitHub Actions workflows in `.github/workflows/`:
 
-### Tfstate backend
+- **`terraform-plan.yml`** (this repo, `yarichard/infra-mountain-race`): assumes `GitHubActionTerraformRole` (bootstrap) to run `terraform plan/apply`.
+- **`ci.yml`** (`yarichard/mountain-race`): assumes `GitHubActionECRPushRoleForMountainRace` to push Docker images to ECR.
 
-Remote state is stored in S3 bucket `terraform-state-bucket-yrichard` (managed by the `terraform-bootstrap` project). This module reads the bootstrap state to retrieve `github_oidc_provider_arn` and `github_actions_terraform_role_name`.
+Both authenticate via OIDC — no long-lived credentials.
 
 ### Secrets
 
-Prod secrets are stored as a single JSON object in `mountain-race/prod` (Secrets Manager, eu-west-3). AppRunner injects each key as an individual env var via `runtime_environment_secrets`. OLLAMA_* vars are excluded — local dev only. `APP_ENV=production` is set as a plain env var so the Go backend skips `godotenv.Load`.
+Prod secrets are stored as a single JSON object in `mountain-race/prod` (Secrets Manager, eu-west-3). Active keys: `OPENAI_API_KEY`, `LLM_PROVIDER`. MeteoFrance and Gemini keys are commented out.
 
 ### Key variables (`variables.tf`)
 
@@ -41,8 +54,5 @@ Prod secrets are stored as a single JSON object in `mountain-race/prod` (Secrets
 | `mountain_race_ecr_repo` | `mountain-race` | ECR repo name |
 | `aws_account_id` | `704496393752` | used in resource ARNs |
 | `github_repositories` | `["mountain-race"]` | repos allowed to assume the ECR push role |
-| `meteofrance_user` | — | sensitive, no default |
-| `meteofrance_pass` | — | sensitive, no default |
 | `openai_api_key` | — | sensitive, no default |
-| `gemini_api_key` | — | sensitive, no default |
 | `llm_provider` | `openai` | active LLM provider |

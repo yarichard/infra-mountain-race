@@ -9,14 +9,12 @@ resource "aws_secretsmanager_secret" "mountain_race_prod" {
 }
 
 resource "aws_secretsmanager_secret_version" "mountain_race_prod" {
-  secret_id = aws_secretsmanager_secret.mountain_race_prod.id
-  secret_string = jsonencode({
-    #METEOFRANCE_USER = var.meteofrance_user
-    #METEOFRANCE_PASS = var.meteofrance_pass
-    OPENAI_API_KEY   = var.openai_api_key
-    #GEMINI_API_KEY   = var.gemini_api_key
-    LLM_PROVIDER     = var.llm_provider
-  })
+  secret_id     = aws_secretsmanager_secret.mountain_race_prod.id
+  secret_string = jsonencode({ _bootstrap = "replace-me" })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
 }
 
 output "mountain_race_secret_arn" {

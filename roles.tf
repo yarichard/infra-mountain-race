@@ -96,7 +96,33 @@ data "aws_iam_policy_document" "terraform_state" {
       "iam:DeletePolicyVersion"
     ]
     resources = [
-      "arn:aws:iam::${var.aws_account_id}:policy/GithubMountainECRTerraformStatePolicy"
+      "arn:aws:iam::${var.aws_account_id}:policy/GithubMountainRaceTerraformStatePolicy"
+    ]
+  }
+
+  statement {
+    actions = [
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:CreateRole",
+      "iam:AttachRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:PutRolePolicy"
+    ]
+    resources = [
+      "arn:aws:iam::${var.aws_account_id}:role/AppRunnerInstanceRoleMountainRace"
+    ]
+  }
+
+  statement {
+    actions = [ 
+      "secretsmanager:DescribeSecret", 
+      "secretsmanager:GetResourcePolicy",
+      "secretsmanager:GetSecretValue"
+    ]
+    resources = [
+      aws_secretsmanager_secret.mountain_race_prod.arn
     ]
   }
 
@@ -113,7 +139,7 @@ data "aws_iam_policy_document" "terraform_state" {
 }
 
 resource "aws_iam_policy" "ecr_terraform_state_policy" {
-  name        = "GithubMountainECRTerraformStatePolicy"
+  name        = "GithubMountainRaceTerraformStatePolicy"
   description = "Allow GitHub Actions to perform terraform apply for mountain_race resources related"
   policy      = data.aws_iam_policy_document.terraform_state.json
 }

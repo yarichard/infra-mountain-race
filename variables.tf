@@ -40,18 +40,6 @@ variable "terraform_repo" {
 #   sensitive   = true
 # }
 
-variable "openai_api_key" {
-  description = "OpenAI API key."
-  type        = string
-  sensitive   = true
-}
-
-# variable "gemini_api_key" {
-#   description = "Google Gemini API key."
-#   type        = string
-#   sensitive   = true
-# }
-
 variable "llm_provider" {
   description = "Active LLM provider (openai or gemini)."
   type        = string
