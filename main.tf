@@ -18,11 +18,9 @@ resource "aws_apprunner_service" "mountain_race" {
           APP_ENV = "production"
         }
         runtime_environment_secrets = {
-          #METEOFRANCE_USER = "${aws_secretsmanager_secret.mountain_race_prod.arn}:METEOFRANCE_USER::"
-          #METEOFRANCE_PASS = "${aws_secretsmanager_secret.mountain_race_prod.arn}:METEOFRANCE_PASS::"
           OPENAI_API_KEY   = "${aws_secretsmanager_secret.mountain_race_prod.arn}:OPENAI_API_KEY::"
-          #GEMINI_API_KEY   = "${aws_secretsmanager_secret.mountain_race_prod.arn}:GEMINI_API_KEY::"
           LLM_PROVIDER     = "${aws_secretsmanager_secret.mountain_race_prod.arn}:LLM_PROVIDER::"
+          INTENT_LLM_PROVIDER = "${aws_secretsmanager_secret.mountain_race_prod.arn}:INTENT_LLM_PROVIDER::"
         }
       }
     }
