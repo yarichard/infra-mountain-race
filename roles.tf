@@ -86,16 +86,17 @@ data "aws_iam_policy_document" "terraform_state" {
     ]
   }
 
-  /*statement {
+  statement {
     actions = [
       "apprunner:CreateService",
       "apprunner:DescribeService",
-      "apprunner:ListTagsForResource"
+      "apprunner:ListTagsForResource",
+      "apprunner:DescribeCustomDomains"
     ]
     resources = [
       aws_apprunner_service.mountain_race.arn
     ]
-  }*/
+  }
 }
 
 resource "aws_iam_policy" "ecr_terraform_state_policy" {
