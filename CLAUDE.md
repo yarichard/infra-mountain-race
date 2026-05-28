@@ -11,25 +11,25 @@ Two projects, both backed by the same S3 bucket (`terraform-state-bucket-yrichar
 | `terraform-bootstrap` | `../terraform-bootstrap` | `bootstrap/terraform.tfstate` | Shared foundations: S3 state bucket, GitHub OIDC provider, `GitHubActionTerraformRole` (used by all infra CI pipelines) |
 | `infra-mountain-race` | `.` (this project) | `mountain-race/terraform.tfstate` | App-specific resources: ECR, Secrets Manager, IAM roles for ECR push and AppRunner |
 
-This project reads bootstrap outputs via `terraform_remote_state` to get `github_oidc_provider_arn` and `github_actions_terraform_role_name`.
+This project reads bootstrap outputs via `terraform_remote_state` to get `github_oidc_provider_arn`, `github_actions_terraform_role_name`, and `ecr_push_pull_policy_arn`.
 
 **To add a new infra repo's CI pipeline**, add its GitHub repo name to `github_repositories_allowed_for_terraform` in `terraform-bootstrap/variables.tf` and re-apply bootstrap.
 
-### Current state
+### Shared module
 
-The AppRunner service definition is commented out in `main.tf`. Active resources are ECR, Secrets Manager, and the associated IAM roles.
+The AppRunner ECR role and GitHub ECR push role are defined via the local module `../modules/ecr-app` (instantiated as `module.ecr_app`). The shared ECR push/pull policy (`GitHubECRPushPullPolicy`) lives in `terraform-bootstrap` and is referenced by ARN.
 
 ### AWS resources managed
 
 | Resource | Name | Notes |
 |---|---|---|
+| AppRunner service | `mountain-race` | pulls from ECR, reads prod secrets |
 | ECR repository | `mountain-race` | scan on push, AES256 encryption, force_delete=true |
 | Secrets Manager secret | `mountain-race/prod` | JSON object: OPENAI_API_KEY, LLM_PROVIDER |
-| IAM role | `MountainRaceAppRunnerECRRole` | lets AppRunner pull from ECR (ECRReadOnly) |
+| IAM role | `MountainRaceAppRunnerECRRole` | lets AppRunner pull from ECR (ECRReadOnly); managed via `module.ecr_app` |
 | IAM role | `AppRunnerInstanceRoleMountainRace` | instance role for the running container; allows `secretsmanager:GetSecretValue` on the prod secret |
-| IAM role | `GitHubActionECRPushRoleForMountainRace` | lets `yarichard/mountain-race` push/pull images via OIDC |
-| IAM policy | `GitHubECRPushPolicyForMountainRace` | full ECR push/pull permissions, attached to the role above |
-| IAM policy | `GithubMountainECRTerraformStatePolicy` | least-privilege `terraform apply` permissions for this module; attached to `GitHubActionTerraformRole` (bootstrap) |
+| IAM role | `GitHubActionECRPushRoleForMountainRace` | lets `yarichard/mountain-race` push/pull images via OIDC; managed via `module.ecr_app` |
+| IAM policy | `GithubMountainRaceTerraformStatePolicy` | least-privilege `terraform apply` permissions for this module; attached to `GitHubActionTerraformRole` (bootstrap) |
 
 Region: `eu-west-3` (Paris). Account: `704496393752`.
 
