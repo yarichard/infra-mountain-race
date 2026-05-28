@@ -1,38 +1,10 @@
-// Github Action configuration for pushing Dockers to ECR repo
-resource "aws_iam_role" "apprunner_ecr_role" {
-  name = "MountainRaceAppRunnerECRRole"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Principal = {
-        Service = "build.apprunner.amazonaws.com"
-      },
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
+module "ecr_app" {
+  source = "git::https://github.com/yarichard/terraform-bootstrap.git//modules/ecr-app?ref=main"
 
-resource "aws_iam_role_policy_attachment" "apprunner_ecr_readonly" {
-  role       = aws_iam_role.apprunner_ecr_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
-
-resource "aws_iam_role" "github_ecr_role" {
-  name               = "GitHubActionECRPushRoleForMountainRace"
-  assume_role_policy = data.aws_iam_policy_document.github_assume_role_for_mountain_race_repos.json
-}
-
-resource "aws_iam_policy" "ecr_policy" {
-  name        = "GitHubECRPushPolicyForMountainRace"
-  description = "Allow GitHub Actions to push/pull images to ECR"
-  policy      = data.aws_iam_policy_document.ecr_access.json
-}
-
-// Attach policy to the role
-resource "aws_iam_role_policy_attachment" "github_ecr_attach" {
-  role       = aws_iam_role.github_ecr_role.name
-  policy_arn = aws_iam_policy.ecr_policy.arn
+  app_name                 = "mountain-race"
+  github_repositories      = var.github_repositories
+  github_oidc_provider_arn = data.terraform_remote_state.bootstrap-tfstate.outputs.github_oidc_provider_arn
+  ecr_push_pull_policy_arn = data.terraform_remote_state.bootstrap-tfstate.outputs.ecr_push_pull_policy_arn
 }
 
 // IAM Policy for Terraform State Access
@@ -72,18 +44,6 @@ data "aws_iam_policy_document" "terraform_state" {
     ]
     resources = [
       "arn:aws:iam::${var.aws_account_id}:role/GitHubActionECRPushRoleForMountainRace"
-    ]
-  }
-
-  statement {
-    actions = [
-      "iam:GetPolicy",
-      "iam:GetPolicyVersion",
-      "iam:CreatePolicy",
-      "iam:AttachRolePolicy"
-    ]
-    resources = [
-      "arn:aws:iam::${var.aws_account_id}:policy/GitHubECRPushPolicyForMountainRace"
     ]
   }
 
