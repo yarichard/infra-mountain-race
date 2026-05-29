@@ -20,7 +20,6 @@ resource "aws_apprunner_service" "mountain_race" {
         runtime_environment_secrets = {
           OPENAI_API_KEY   = "${aws_secretsmanager_secret.mountain_race_prod.arn}:OPENAI_API_KEY::"
           LLM_PROVIDER     = "${aws_secretsmanager_secret.mountain_race_prod.arn}:LLM_PROVIDER::"
-          INTENT_LLM_PROVIDER = "${aws_secretsmanager_secret.mountain_race_prod.arn}:INTENT_LLM_PROVIDER::"
         }
       }
     }

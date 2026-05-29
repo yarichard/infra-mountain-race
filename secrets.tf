@@ -10,7 +10,10 @@ resource "aws_secretsmanager_secret" "mountain_race_prod" {
 
 resource "aws_secretsmanager_secret_version" "mountain_race_prod" {
   secret_id     = aws_secretsmanager_secret.mountain_race_prod.id
-  secret_string = jsonencode({ _bootstrap = "replace-me" })
+  secret_string = jsonencode({
+    OPENAI_API_KEY      = var.openai_api_key
+    LLM_PROVIDER        = var.llm_provider
+  })
 
   lifecycle {
     ignore_changes = [secret_string]

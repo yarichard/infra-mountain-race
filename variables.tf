@@ -28,20 +28,14 @@ variable "terraform_repo" {
   default     = "infra-wam_message"
 }
 
-# variable "meteofrance_user" {
-#   description = "MeteoFrance API username."
-#   type        = string
-#   sensitive   = true
-# }
-
-# variable "meteofrance_pass" {
-#   description = "MeteoFrance API password."
-#   type        = string
-#   sensitive   = true
-# }
-
 variable "llm_provider" {
   description = "Active LLM provider (openai or gemini)."
   type        = string
   default     = "openai"
+}
+
+variable "openai_api_key" {
+  description = "OpenAI API key."
+  type        = string
+  sensitive   = true
 }
