@@ -17,6 +17,7 @@ jobs:
 
     env:
       TF_WORKING_DIR: .
+      TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -79,6 +80,7 @@ jobs:
 
     env:
       TF_WORKING_DIR: .
+      TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - name: Checkout repository
