@@ -39,3 +39,15 @@ variable "openai_api_key" {
   type        = string
   sensitive   = true
 }
+
+variable "meteo_france_user" {
+  description = "Username for Meteo France API."
+  type        = string
+  sensitive   = true
+}
+
+variable "meteo_france_password" {
+  description = "Password for Meteo France API."
+  type        = string
+  sensitive   = true
+}
