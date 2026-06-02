@@ -54,18 +54,26 @@ data "aws_iam_policy_document" "terraform_state" {
   }
 
   statement {
-    sid    = "SSMAccess"
+    sid    = "SSMParamAccess"
     effect = "Allow"
     actions = [
       "ssm:PutParameter",
       "ssm:GetParameter",
       "ssm:GetParameters",
       "ssm:DeleteParameter",
-      "ssm:DescribeParameters",
       "ssm:AddTagsToResource",
       "ssm:ListTagsForResource"
     ]
     resources = ["arn:aws:ssm:${var.region}:${var.aws_account_id}:parameter/mountain-race/*"]
+  }
+
+  statement {
+    sid    = "SSMListAccess"
+    effect = "Allow"
+    actions = [
+      "ssm:DescribeParameters" # list action — does not support resource-level restrictions
+    ]
+    resources = ["*"]
   }
 
   statement {
@@ -97,37 +105,36 @@ data "aws_iam_policy_document" "terraform_state" {
       "application-autoscaling:DescribeScalableTargets",
       "application-autoscaling:PutScheduledAction",
       "application-autoscaling:DeleteScheduledAction",
-      "application-autoscaling:DescribeScheduledActions"
+      "application-autoscaling:DescribeScheduledActions",
+      "application-autoscaling:ListTagsForResource",
+      "application-autoscaling:TagResource"
     ]
     resources = ["*"]
   }
 
   statement {
-    sid    = "LogsECSAccess"
+    sid    = "LogsAccess"
     effect = "Allow"
     actions = [
       "logs:CreateLogGroup",
       "logs:DeleteLogGroup",
-      "logs:DescribeLogGroups",
-      "logs:ListTagsLogGroup",
-      "logs:TagLogGroup",
-      "logs:PutRetentionPolicy"
+      "logs:PutRetentionPolicy",
+      "logs:ListTagsForResource",
+      "logs:TagResource"
     ]
-    resources = ["arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/ecs/mountain-race*"]
+    resources = [
+      "arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/ecs/mountain-race*",
+      "arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/aws/lambda/mountain-race-*"
+    ]
   }
 
   statement {
-    sid    = "LogsLambdaAccess"
+    sid    = "LogsListAccess"
     effect = "Allow"
     actions = [
-      "logs:CreateLogGroup",
-      "logs:DeleteLogGroup",
-      "logs:DescribeLogGroups",
-      "logs:ListTagsLogGroup",
-      "logs:TagLogGroup",
-      "logs:PutRetentionPolicy"
+      "logs:DescribeLogGroups" # list action — does not support resource-level restrictions
     ]
-    resources = ["arn:aws:logs:${var.region}:${var.aws_account_id}:log-group:/aws/lambda/mountain-race-*"]
+    resources = ["*"]
   }
 
   statement {
@@ -135,6 +142,7 @@ data "aws_iam_policy_document" "terraform_state" {
     effect = "Allow"
     actions = [
       "ec2:DescribeVpcs",
+      "ec2:DescribeVpcAttribute",
       "ec2:DescribeSubnets",
       "ec2:DescribeSecurityGroups",
       "ec2:CreateSecurityGroup",
@@ -157,6 +165,7 @@ data "aws_iam_policy_document" "terraform_state" {
       "lambda:DeleteFunction",
       "lambda:GetFunction",
       "lambda:GetFunctionConfiguration",
+      "lambda:GetFunctionCodeSigningConfig",
       "lambda:UpdateFunctionCode",
       "lambda:UpdateFunctionConfiguration",
       "lambda:AddPermission",
@@ -208,6 +217,7 @@ data "aws_iam_policy_document" "terraform_state" {
     effect = "Allow"
     actions = [
       "cloudfront:CreateDistribution",
+      "cloudfront:CreateDistributionWithTags", # Terraform uses this when tags are set
       "cloudfront:UpdateDistribution",
       "cloudfront:GetDistribution",
       "cloudfront:GetDistributionConfig",
@@ -216,6 +226,15 @@ data "aws_iam_policy_document" "terraform_state" {
       "cloudfront:ListTagsForResource",
     ]
     resources = ["arn:aws:cloudfront::${var.aws_account_id}:distribution/*"]
+  }
+
+  statement {
+    sid    = "CloudFrontListAccess"
+    effect = "Allow"
+    actions = [
+      "cloudfront:ListDistributions" # list action — does not support resource-level restrictions
+    ]
+    resources = ["*"]
   }
 
   statement {
@@ -229,6 +248,15 @@ data "aws_iam_policy_document" "terraform_state" {
       "acm:AddTagsToCertificate",
     ]
     resources = ["arn:aws:acm:us-east-1:${var.aws_account_id}:certificate/*"]
+  }
+
+  statement {
+    sid    = "ACMListAccess"
+    effect = "Allow"
+    actions = [
+      "acm:ListCertificates" # list action — does not support resource-level restrictions
+    ]
+    resources = ["*"]
   }
 }
 
