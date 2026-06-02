@@ -65,7 +65,9 @@ resource "aws_ecs_task_definition" "mountain_race" {
 
     secrets = [
       { name = "OPENAI_API_KEY", valueFrom = aws_ssm_parameter.openai_api_key.arn },
-      { name = "LLM_PROVIDER",   valueFrom = aws_ssm_parameter.llm_provider.arn }
+      { name = "LLM_PROVIDER", valueFrom = aws_ssm_parameter.llm_provider.arn },
+      { name = "METEO_FRANCE_USER", valueFrom = aws_ssm_parameter.meteo_france_user.arn },
+      { name = "METEO_FRANCE_PASS", valueFrom = aws_ssm_parameter.meteo_france_password.arn }
     ]
 
     logConfiguration = {

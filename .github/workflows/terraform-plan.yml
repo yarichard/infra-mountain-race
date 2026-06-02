@@ -18,6 +18,8 @@ jobs:
     env:
       TF_WORKING_DIR: .
       TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+      TF_VAR_meteo_france_user: ${{ secrets.METEO_FRANCE_USER }}
+      TF_VAR_meteo_france_password: ${{ secrets.METEO_FRANCE_PASSWORD }}
 
     steps:
       - name: Checkout repository
