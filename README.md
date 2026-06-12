@@ -154,6 +154,17 @@ Changes take effect on the next task restart (force a new deployment to apply im
 
 Push to ECR via GitHub Actions (`ci.yml` in `yarichard/mountain-race`) — it calls `aws ecs update-service --force-new-deployment` automatically. The Lambda then updates the Route53 origin record.
 
+### Troubleshooting: CannotPullContainerError (digest not found)
+
+If a task fails with `CannotPullContainerError: failed to resolve ref ...@sha256:...`: not found`, ECS has a stale pinned digest from a previous deployment. This happens when an image is overwritten in ECR while ECS still references the old digest internally.
+
+Fix: force a new deployment so ECS re-resolves `:latest` to the current digest.
+
+```sh
+aws ecs update-service --cluster mountain-race --service mountain-race \
+  --force-new-deployment --region eu-west-3
+```
+
 ### Rotate OVH API credentials
 
 ```sh
